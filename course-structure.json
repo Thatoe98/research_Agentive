@@ -1,0 +1,171 @@
+{
+  "beginner": [
+    {
+      "id": "welcome-beginner",
+      "title": "Welcome to AI Fundamentals",
+      "objective": "Introduce complete beginners to the world of AI.",
+      "activities": [
+        "AI basics explanation",
+        "Simple definitions and examples",
+        "Visual comparisons"
+      ],
+      "outcome": "Understanding of what AI is"
+    },
+    {
+      "id": "what-is-ai",
+      "title": "What is Artificial Intelligence?",
+      "objective": "Learn the basic definition and types of AI.",
+      "activities": [
+        "Simple AI definition",
+        "Real-world AI examples",
+        "Interactive examples quiz"
+      ],
+      "outcome": "Badge: AI Explorer"
+    },
+    {
+      "id": "generative-ai-intro",
+      "title": "Introduction to Generative AI",
+      "objective": "Understand what Generative AI is and how it works.",
+      "activities": [
+        "What is Generative AI?",
+        "Examples: ChatGPT, DALL-E",
+        "Simple use cases"
+      ],
+      "outcome": "Badge: Gen AI Learner"
+    },
+    {
+      "id": "agentive-ai-basics",
+      "title": "Understanding Agentive AI",
+      "objective": "Learn what Agentive AI is and how it differs from Generative AI.",
+      "activities": [
+        "Agentive vs Generative comparison",
+        "Simple examples and scenarios",
+        "Basic use cases"
+      ],
+      "outcome": "Badge: Agent Discoverer"
+    },
+    {
+      "id": "codex-introduction",
+      "title": "Meet Codex AI",
+      "objective": "Introduction to Codex and code generation.",
+      "activities": [
+        "What is Codex?",
+        "How it helps with coding",
+        "Simple demonstration"
+      ],
+      "outcome": "Badge: Code Curious"
+    },
+    {
+      "id": "codex-demo",
+      "title": "Try Codex Yourself",
+      "objective": "Hands-on experience with code generation.",
+      "activities": [
+        "Interactive code generation",
+        "Try simple prompts",
+        "See AI create code"
+      ],
+      "outcome": "Badge: Code Creator"
+    },
+    {
+      "id": "escape-room",
+      "title": "AI Knowledge Challenge",
+      "objective": "Test your new AI knowledge in a fun way.",
+      "activities": [
+        "AI-themed puzzles",
+        "Apply what you learned",
+        "Problem-solving challenges"
+      ],
+      "outcome": "Badge: AI Problem Solver"
+    }
+  ],
+  "intermediate": [
+    {
+      "id": "welcome-intermediate",
+      "title": "Advanced AI Applications",
+      "objective": "Dive deeper into AI applications and use cases.",
+      "activities": [
+        "Advanced concepts overview",
+        "Industry applications",
+        "Complex scenarios"
+      ],
+      "outcome": "Ready for advanced learning"
+    },
+    {
+      "id": "ai-industry-cases",
+      "title": "AI in Industry: Real-World Applications",
+      "objective": "Explore how AI is transforming various industries.",
+      "activities": [
+        "Healthcare AI applications",
+        "Finance and banking use cases",
+        "Manufacturing and automation"
+      ],
+      "outcome": "Badge: Industry Expert"
+    },
+    {
+      "id": "generative-ai-advanced",
+      "title": "Advanced Generative AI Use Cases",
+      "objective": "Deep dive into complex Generative AI applications.",
+      "activities": [
+        "Content creation workflows",
+        "Business applications",
+        "Ethical considerations"
+      ],
+      "outcome": "Badge: Gen AI Specialist"
+    },
+    {
+      "id": "agentive-ai-deep-dive",
+      "title": "Agentive AI: Complex Implementations",
+      "objective": "Study advanced Agentive AI systems and architectures.",
+      "activities": [
+        "Multi-agent systems",
+        "Business process automation",
+        "Case study analysis"
+      ],
+      "outcome": "Badge: Agent Architect"
+    },
+    {
+      "id": "codex-advanced",
+      "title": "Codex in Production: Best Practices",
+      "objective": "Learn professional Codex usage and limitations.",
+      "activities": [
+        "Production-ready code generation",
+        "Security considerations",
+        "Performance optimization"
+      ],
+      "outcome": "Badge: Code Professional"
+    },
+    {
+      "id": "codex-demo",
+      "title": "Advanced Code Generation Workshop",
+      "objective": "Master complex prompt engineering for code generation.",
+      "activities": [
+        "Complex code generation",
+        "Advanced prompt techniques",
+        "Real-world scenarios"
+      ],
+      "outcome": "Badge: Prompt Master"
+    },
+    {
+      "id": "ai-strategy-case-study",
+      "title": "AI Strategy Case Study",
+      "objective": "Analyze real AI implementation strategies.",
+      "activities": [
+        "Company transformation case",
+        "ROI analysis",
+        "Implementation challenges"
+      ],
+      "outcome": "Badge: Strategy Analyst"
+    },
+    {
+      "id": "escape-room",
+      "title": "AI Expert Challenge",
+      "objective": "Solve complex AI problems using advanced knowledge.",
+      "activities": [
+        "Advanced AI puzzles",
+        "Strategic thinking challenges",
+        "Complex problem solving"
+      ],
+      "outcome": "Badge: AI Expert"
+    }
+  ]
+}

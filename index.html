@@ -14,33 +14,37 @@
             <label for="username">Enter your name to begin:</label>
             <input type="text" id="username" name="username" required>
             <button id="start-btn">Start</button>
-        </section>
-
-        <!-- Progress Bar -->
+        </section>        <!-- Progress Bar -->
         <div id="progress-bar-container" style="display:none;">
             <div id="progress-bar"></div>
-        </div>        <!-- Pretest Section -->
+        </div>
+
+        <!-- Pretest Section -->
         <section id="pretest-section" style="display:none;">
-            <h2>Pretest</h2>
+            <h2>📝 Pretest - Test Your Current Knowledge</h2>
+            <p>Let's see what you already know about AI and Codex before we start!</p>
             <div id="pretest-quiz"></div>
-            <button id="pretest-next-btn" style="display:none;">Next</button>
-        </section>        <!-- Course Content Section -->
+        </section>
+
+        <!-- Course Content Section -->
         <section id="course-section" style="display:none;">
             <h2>Course Content</h2>
             <div id="course-content"></div>
-            <button id="course-next-btn" style="display:none;">Next</button>
-        </section>        <!-- Posttest Section -->
-        <section id="posttest-section" style="display:none;">
-            <h2>Posttest</h2>
-            <div id="posttest-quiz"></div>
-            <button id="posttest-finish-btn" style="display:none;">Finish</button>
+            <button id="course-next-btn" style="display:none;">Next Module</button>
         </section>
 
-        <!-- Highscore & Analysis Section -->
+        <!-- Posttest Section -->
+        <section id="posttest-section" style="display:none;">
+            <h2>📋 Posttest - Show What You've Learned</h2>
+            <p>Time to demonstrate your new knowledge!</p>
+            <div id="posttest-quiz"></div>
+        </section>
+
+        <!-- Results Section -->
         <section id="highscore-section" style="display:none;">
-            <h2>Your Results</h2>
+            <h2>🎉 Course Complete!</h2>
             <div id="results"></div>
-            <button id="restart-btn">Restart</button>
+            <button id="restart-btn" onclick="location.reload()">Take Course Again</button>
         </section>
     </div>
     <script src="main.js"></script>
