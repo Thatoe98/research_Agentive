@@ -3,23 +3,13 @@
     {
       "id": "welcome-beginner",
       "title": "Welcome to AI Fundamentals",
-      "objective": "Introduce complete beginners to the world of AI.",
-      "activities": [
-        "AI basics explanation",
-        "Simple definitions and examples",
-        "Visual comparisons"
-      ],
+      "objective": "Introduce beginners to AI",
       "outcome": "Understanding of what AI is"
     },
     {
       "id": "what-is-ai",
-      "title": "What is Artificial Intelligence?",
-      "objective": "Learn the basic definition and types of AI.",
-      "activities": [
-        "Simple AI definition",
-        "Real-world AI examples",
-        "Interactive examples quiz"
-      ],
+      "title": "What is AI?",
+      "objective": "Learn AI basics",
       "outcome": "Badge: AI Explorer"
     },
     {
@@ -81,13 +71,8 @@
   "intermediate": [
     {
       "id": "welcome-intermediate",
-      "title": "Advanced AI Applications",
-      "objective": "Dive deeper into AI applications and use cases.",
-      "activities": [
-        "Advanced concepts overview",
-        "Industry applications",
-        "Complex scenarios"
-      ],
+      "title": "Advanced AI Deep Dive",
+      "objective": "Advanced AI concepts",
       "outcome": "Ready for advanced learning"
     },
     {

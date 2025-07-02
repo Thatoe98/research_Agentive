@@ -942,3 +942,15 @@ button:hover {
         font-size: 20px;
     }
 }
+
+@keyframes bounce {
+    0%, 20%, 60%, 100% {
+        transform: translate(-50%, -50%) translateY(0);
+    }
+    40% {
+        transform: translate(-50%, -50%) translateY(-10px);
+    }
+    80% {
+        transform: translate(-50%, -50%) translateY(-5px);
+    }
+}

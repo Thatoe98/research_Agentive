@@ -1,93 +1,94 @@
 function doPost(e) {
   try {
-    // Get the spreadsheet by ID or URL
-    // Replace 'YOUR_SPREADSHEET_ID' with your actual Google Sheets ID
-    const sheet = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID').getActiveSheet();
+    const SPREADSHEET_ID = '1sPZlkOtbbSqhXBj25wM-Wwqd9YzV3RCfTD1w3NFTiZ0';
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
     
-    // Set up headers if the sheet is empty
+    // Set headers if empty
     if (sheet.getLastRow() === 0) {
       const headers = [
-        'Timestamp',
-        'Name', 
-        'Pre-test Score',
-        'Post-test Score',
-        'Modules Completed',
-        'High Score',
-        'Improvement',
-        'Enjoyment'
+        'Timestamp', 'Name', 'Course Path', 'Pre-test Score', 'Post-test Score', 
+        'Modules Completed', 'High Score', 'Badges Earned', 'Total Time (seconds)',
+        'Improvement Feedback', 'Enjoyment Feedback'
       ];
       sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
       sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
     }
     
+    // Parse data with better error handling
     let data;
-    
-    // Handle different types of POST data
-    if (e.postData && e.postData.contents) {
-      // JSON data from fetch request
-      try {
+    try {
+      if (e.postData && e.postData.contents) {
         data = JSON.parse(e.postData.contents);
-        Logger.log('Parsed JSON data: ' + JSON.stringify(data));
-      } catch (jsonError) {
-        Logger.log('JSON parse error: ' + jsonError.toString());
-        // Try to parse as form data
+      } else if (e.parameter) {
         data = e.parameter;
+      } else {
+        throw new Error('No data received');
       }
-    } else {
-      // Form data
-      data = e.parameter;
-      Logger.log('Form data: ' + JSON.stringify(data));
+    } catch (parseError) {
+      Logger.log('Parse error: ' + parseError.toString());
+      Logger.log('Raw postData: ' + JSON.stringify(e.postData));
+      data = {};
     }
     
-    // Extract values in the correct order
+    // Log incoming data for debugging
+    Logger.log('Received data: ' + JSON.stringify(data));
+    
+    // Prepare row with safe data access
     const row = [
       data.Timestamp || new Date().toISOString(),
       data.Name || '',
+      data['Course Path'] || '',
       data['Pre-test Score'] || '',
       data['Post-test Score'] || '',
       data['Modules Completed'] || '',
-      data['High Score'] || '',
-      data.Improvement || '',
-      data.Enjoyment || ''
+      parseInt(data['High Score']) || 0,
+      data['Badges Earned'] || '',
+      parseInt(data['Total Time (seconds)']) || 0,
+      data['Improvement Feedback'] || '',
+      data['Enjoyment Feedback'] || ''
     ];
     
-    Logger.log('Row data to insert: ' + JSON.stringify(row));
-    
-    // Append the row to the sheet
+    // Add the row to the sheet
     sheet.appendRow(row);
     
-    // Return success response
+    // Log success for debugging
+    Logger.log('Data saved successfully: ' + JSON.stringify(row));
+    
     return ContentService
       .createTextOutput(JSON.stringify({
         status: 'success',
         message: 'Data saved successfully',
-        timestamp: new Date().toISOString()
+        rowData: row
       }))
       .setMimeType(ContentService.MimeType.JSON);
       
   } catch (error) {
-    Logger.log('Error: ' + error.toString());
-    
-    // Return error response
+    Logger.log('Error in doPost: ' + error.toString());
+    Logger.log('Error stack: ' + error.stack);
     return ContentService
       .createTextOutput(JSON.stringify({
         status: 'error',
         message: error.toString(),
-        timestamp: new Date().toISOString()
+        details: 'Check execution logs for more details'
       }))
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function doGet(e) {
-  // Handle GET requests for testing
-  return ContentService
-    .createTextOutput('Google Apps Script is working! Use POST to submit data.')
-    .setMimeType(ContentService.MimeType.TEXT);
+  return ContentService.createTextOutput('Google Apps Script is working! POST requests accepted.');
 }
 
-// Test function to verify the script works
+// Test function
 function testFunction() {
   Logger.log('Script is working correctly');
-  return 'Test successful';
+  try {
+    const SPREADSHEET_ID = '1sPZlkOtbbSqhXBj25wM-Wwqd9YzV3RCfTD1w3NFTiZ0';
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
+    Logger.log('Spreadsheet access successful');
+    return 'Test successful - can access spreadsheet';
+  } catch (error) {
+    Logger.log('Test failed: ' + error.toString());
+    return 'Test failed: ' + error.toString();
+  }
 }

@@ -3,7 +3,32 @@
 // Course structure data
 let courseStructure = {};
 let currentCourse = [];
-let currentModuleIndex = 0;
+
+// Move these to the top, right after courseStructure declaration
+let currentModule = 0;
+let currentPretest = 0;
+let currentPosttest = 0;
+let currentQuestionIndex = 0;
+
+// Timing variables
+let pretestStart = null, pretestEnd = null, moduleStart = null, moduleEnd = null, posttestStart = null, posttestEnd = null;
+
+// Initialize userData object
+let userData = {
+    name: '',
+    pretest: [],
+    posttest: [],
+    moduleProgress: [],
+    badges: [],
+    points: 0,
+    startTime: null,
+    endTime: null,
+    feedback: '',
+    pretestTime: 0,
+    posttestTime: 0,
+    proficiencyLevel: '', // 'beginner' or 'intermediate'
+    coursePath: []
+};
 
 // Load course structure from JSON
 async function loadCourseStructure() {
@@ -16,22 +41,23 @@ async function loadCourseStructure() {
         // Fallback to default structure if JSON fails to load
         courseStructure = {
             beginner: [
-                {
-                    "id": "welcome-beginner",
-                    "title": "Welcome to AI Fundamentals",
-                    "objective": "Introduce complete beginners to the world of AI.",
-                    "activities": ["AI basics explanation", "Simple definitions and examples"],
-                    "outcome": "Understanding of what AI is"
-                }
+                { id: "welcome-beginner", title: "Welcome to AI Fundamentals", objective: "Introduce beginners to AI" },
+                { id: "what-is-ai", title: "What is AI?", objective: "Learn AI basics" },
+                { id: "generative-ai-intro", title: "Generative AI Intro", objective: "Understand generative AI" },
+                { id: "agentive-ai-basics", title: "Agentive AI Basics", objective: "Learn about agentive AI" },
+                { id: "codex-introduction", title: "Meet Codex AI", objective: "Discover Codex capabilities" },
+                { id: "codex-demo", title: "Codex Demo", objective: "Experience Codex in action" },
+                { id: "reflection", title: "Course Reflection", objective: "Complete the course" },
+                { id: "escape-room", title: "AI Knowledge Challenge", objective: "Test understanding" } // Added missing module
             ],
             intermediate: [
-                {
-                    "id": "welcome-intermediate", 
-                    "title": "Advanced AI Applications",
-                    "objective": "Dive deeper into AI applications and use cases.",
-                    "activities": ["Advanced concepts overview", "Industry applications"],
-                    "outcome": "Ready for advanced learning"
-                }
+                { id: "welcome-intermediate", title: "Advanced AI Deep Dive", objective: "Advanced AI concepts" },
+                { id: "ai-industry-cases", title: "AI in Industry", objective: "Real-world applications" },
+                { id: "generative-ai-advanced", title: "Advanced Generative AI", objective: "Enterprise applications" },
+                { id: "agentive-ai-deep-dive", title: "Agentive AI Deep Dive", objective: "Technical architecture" },
+                { id: "github-copilot-deep-dive", title: "GitHub Copilot Professional", objective: "Professional development" },
+                { id: "codex-advanced", title: "Advanced Codex", objective: "Production usage" },
+                { id: "ai-strategy-case-study", title: "AI Strategy Case Study", objective: "Implementation strategies" }
             ]
         };
     }
@@ -53,9 +79,11 @@ function determineProficiencyLevel() {
     if (correctAnswers <= 4 || (advancedQuestions <= 1 && intermediateQuestions <= 2)) {
         userData.proficiencyLevel = 'beginner';
         console.log('Assigned to BEGINNER course');
+        shuffledPosttestQuestions = shuffledBeginnerPosttest; // ← ADD THIS
     } else {
         userData.proficiencyLevel = 'intermediate'; 
         console.log('Assigned to INTERMEDIATE course');
+        shuffledPosttestQuestions = shuffledIntermediatePosttest; // ← ADD THIS
     }
     
     // Set the current course based on proficiency
@@ -65,16 +93,55 @@ function determineProficiencyLevel() {
 
 // Initialize course when page loads
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadCourseStructure();
-    initializeGameHeader();
+    try {
+        await loadCourseStructure();
+        
+        // Add small delay to ensure DOM is fully loaded
+        setTimeout(() => {
+            // Get DOM elements after they're loaded
+            const nameSection = document.getElementById('name-section');
+            const pretestSection = document.getElementById('pretest-section');
+            const courseSection = document.getElementById('course-section');
+            const posttestSection = document.getElementById('posttest-section');
+            const highscoreSection = document.getElementById('highscore-section');
+            const progressBarContainer = document.getElementById('progress-bar-container');
+            const progressBar = document.getElementById('progress-bar');
+            
+            // Add the start button handler
+            const startBtn = document.getElementById('start-btn');
+            if (startBtn) {
+                startBtn.onclick = () => {
+                    console.log('Start button clicked!'); // Debug log
+                    
+                    const name = document.getElementById('username').value.trim();
+                    if (name) {
+                        userData.name = name;
+                        userData.startTime = Date.now();
+                        pretestStart = Date.now();
+                        
+                        console.log('User data set:', userData); // Debug log
+                        
+                        // Hide name section and show progress bar
+                        if (nameSection) nameSection.style.display = 'none';
+                        if (progressBarContainer) progressBarContainer.style.display = 'block';
+                        
+                        // Start the pretest
+                        startPretest();
+                    } else {
+                        alert('Please enter your name to continue');
+                    }
+                };
+                console.log('Start button handler attached'); // Debug log
+            } else {
+                console.error('Start button not found!');
+            }
+        }, 200); // Increased delay
+        
+        console.log('Course initialized successfully');
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
 });
-
-function initializeGameHeader() {
-    const header = document.createElement('div');
-    header.id = 'game-header';
-    header.innerHTML = `<div id='avatar'>🤖</div><div id='level-indicator'>Proficiency Assessment</div>`;
-    document.getElementById('main-container').prepend(header);
-}
 
 function updateGameHeaderForCourse() {
     const levelIndicator = document.getElementById('level-indicator');
@@ -110,23 +177,6 @@ function shuffleOptions(question) {
         answer: newCorrectAnswer
     };
 }
-
-// Variables for state
-let userData = {
-    name: '',
-    pretest: [],
-    posttest: [],
-    moduleProgress: [],
-    badges: [],
-    points: 0,
-    startTime: null,
-    endTime: null,
-    feedback: '',
-    pretestTime: 0,
-    posttestTime: 0,
-    proficiencyLevel: '', // 'beginner' or 'intermediate'
-    coursePath: []
-};
 
 // Updated Pretest Questions to assess AI knowledge level
 let pretestQuestions = [
@@ -570,7 +620,83 @@ let moduleContent = {
                 </div>
             </div>
         `
-    },    "agentive-ai-deep-dive": {
+    },    "ai-industry-cases": {
+        type: 'reading',
+        content: `
+            <div class="module-content">
+                <div class="reading-section">
+                    <h2>🏭 AI in Industry: Real-World Applications</h2>
+                    
+                    <div class="concept-explanation">
+                        <h3>💼 How AI Transforms Industries</h3>
+                        <p><strong>AI is revolutionizing every major industry with practical, measurable results.</strong></p>
+                    </div>
+                    
+                    <div class="industry-examples">
+                        <h3>🏥 Healthcare AI Applications</h3>
+                        <div class="application-card">
+                            <h4>🔬 Medical Imaging</h4>
+                            <ul>
+                                <li>AI detects cancer with 90%+ accuracy</li>
+                                <li>Faster diagnosis than human radiologists</li>
+                                <li>Early detection saves lives and costs</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `,
+        quiz: {
+            question: "What is a key benefit of AI in healthcare?",
+            options: [
+                "Early detection and improved diagnosis accuracy",
+                "Replacing all doctors",
+                "Only organizing patient files",
+                "Making hospitals look modern"
+            ],
+            answer: 0
+        }
+    },
+    "generative-ai-advanced": {
+        type: 'reading',
+        content: `
+            <div class="module-content">
+                <div class="reading-section">
+                    <h2>🚀 Advanced Generative AI Use Cases</h2>
+                    
+                    <div class="concept-explanation">
+                        <h3>💼 Enterprise Generative AI Applications</h3>
+                        <p><strong>Advanced Generative AI goes beyond simple content creation to transform business workflows.</strong></p>
+                    </div>
+                    
+                    <div class="advanced-applications">
+                        <h3>📊 Business Process Integration</h3>
+                        <div class="application-examples">
+                            <div class="example-card">
+                                <h4>📝 Content Creation Workflows</h4>
+                                <ul>
+                                    <li>Automated report generation</li>
+                                    <li>Marketing content at scale</li>
+                                    <li>Personalized customer communications</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `,
+        quiz: {
+            question: "What characterizes advanced Generative AI in business?",
+            options: [
+                "Integration with business processes and automated workflows",
+                "Only creating simple text",
+                "Working without any human oversight",
+                "Replacing all human creativity"
+            ],
+            answer: 0
+        }
+    },
+    "agentive-ai-deep-dive": {
         type: 'reading',
         content: `
             <div class="module-content">
@@ -690,127 +816,21 @@ let moduleContent = {
         content: `
             <div class="module-content">
                 <div class="reading-section">
-                    <h2>🤖 GitHub Copilot: Your AI Programming Partner</h2>
+                    <h2>🤖 GitHub Copilot: Professional Development</h2>
                     
                     <div class="concept-explanation">
                         <h3>💡 What is GitHub Copilot?</h3>
                         <p><strong>GitHub Copilot is an AI-powered code completion tool that acts as your pair programming partner.</strong></p>
                         
-                        <div class="architecture-overview">
-                            <h4>🧠 Based on OpenAI Codex:</h4>
+                        <div class="best-practices">
+                            <h3>💼 Professional Best Practices</h3>
                             <ul>
-                                <li>Large language model trained on billions of lines of public code</li>
-                                <li>Understands context from comments and existing code</li>
-                                <li>Generates human-like code suggestions in real-time</li>
-                            </ul>
-                            
-                            <h4>⚡ Real-time Integration:</h4>
-                            <ul>
-                                <li>Works in VS Code, Neovim, JetBrains IDEs</li>
-                                <li>Analyzes current file and project context</li>
-                                <li>Provides suggestions as you type</li>
+                                <li>Always review generated code for logic errors</li>
+                                <li>Verify security implications</li>
+                                <li>Test thoroughly before deployment</li>
+                                <li>Use clear, descriptive comments for better suggestions</li>
                             </ul>
                         </div>
-                    </div>
-                    
-                    <div class="suggestion-mechanisms">
-                        <h3>💡 How GitHub Copilot Provides Code Suggestions</h3>
-                        <div class="mechanisms-grid">
-                            <div class="mechanism-card">
-                                <h4>🔄 Autocomplete Suggestions</h4>
-                                <p>Real-time completions as you type</p>
-                                <p>Predicts next lines based on context</p>
-                                <p>Multiple suggestion options (Tab to accept)</p>
-                            </div>
-                            <div class="mechanism-card">
-                                <h4>📝 Comment-to-Code</h4>
-                                <p>Write descriptive comments</p>
-                                <p>Copilot generates corresponding code</p>
-                                <p><strong>Example:</strong> "// Create a function to calculate fibonacci"</p>
-                            </div>
-                            <div class="mechanism-card">
-                                <h4>🔧 Function Generation</h4>
-                                <p>Start function signature, Copilot completes body</p>
-                                <p>Understands function names and parameters</p>
-                                <p>Generates appropriate logic and error handling</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="advanced-features">
-                        <h3>🚀 Advanced Code Completion Capabilities</h3>
-                        <div class="features-list">
-                            <div class="feature-group">
-                                <h4>🎯 Context-Aware Completion</h4>
-                                <ul>
-                                    <li>Analyzes entire file and imports</li>
-                                    <li>Understands variable types and scope</li>
-                                    <li>Suggests contextually appropriate code</li>
-                                </ul>
-                            </div>
-                            <div class="feature-group">
-                                <h4>🔧 Multi-Language Support</h4>
-                                <ul>
-                                    <li>Python, JavaScript, TypeScript, Ruby, Go, C#</li>
-                                    <li>Framework-specific suggestions (React, Django, etc.)</li>
-                                    <li>Cross-language pattern recognition</li>
-                                </ul>
-                            </div>
-                            <div class="feature-group">
-                                <h4>🧩 Complex Code Generation</h4>
-                                <ul>
-                                    <li>Complete algorithm implementations</li>
-                                    <li>Database query builders</li>
-                                    <li>API endpoint handlers</li>
-                                    <li>Test suite generation</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="best-practices">
-                        <h3>💼 Professional Best Practices</h3>
-                        <div class="practices-grid">
-                            <div class="practice-card">
-                                <h4>✅ Code Review Protocol</h4>
-                                <ul>
-                                    <li>Always review generated code for logic errors</li>
-                                    <li>Verify security implications</li>
-                                    <li>Ensure coding standards compliance</li>
-                                    <li>Test thoroughly before deployment</li>
-                                </ul>
-                            </div>
-                            <div class="practice-card">
-                                <h4>🎯 Effective Prompting</h4>
-                                <ul>
-                                    <li>Write clear, descriptive comments</li>
-                                    <li>Provide context about requirements</li>
-                                    <li>Specify error handling needs</li>
-                                    <li>Include performance considerations</li>
-                                </ul>
-                            </div>
-                            <div class="practice-card">
-                                <h4>📈 Productivity Benefits</h4>
-                                <ul>
-                                    <li>30-50% faster initial code writing</li>
-                                    <li>Reduced boilerplate code time</li>
-                                    <li>Learning new APIs and patterns</li>
-                                    <li>Focus on architecture vs. syntax</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="video-section">
-                    <h3>🎬 Watch: GitHub Copilot in Professional Development</h3>
-                    <div class="video-placeholder">
-                        <div class="video-thumb">
-                            <span class="play-icon">▶️</span>
-                            <p><strong>Video:</strong> "GitHub Copilot: Code Suggestions and Completion Demo"</p>
-                            <p><em>Duration: 8-10 minutes</em></p>
-                        </div>
-                        <p class="video-description">Watch real developers using GitHub Copilot for code completion, function generation, and complex programming tasks.</p>
                     </div>
                 </div>
             </div>
@@ -826,201 +846,127 @@ let moduleContent = {
             answer: 0
         }
     },
-    "codex-advanced": {
-        type: 'reading',
-        content: `
-            <div class="module-content">
-                <div class="reading-section">
-                    <h2>🧠 Codex: Understanding Advanced Code Generation</h2>
+
+    // SHARED MODULES (used in both courses)
+    "codex-demo": {
+    type: 'interactive',
+    content: `
+        <div class="module-content">
+            <div class="reading-section">
+                <h2>🎮 Interactive Codex Demonstration</h2>
+                
+                <div class="demo-explanation">
+                    <h3>🚀 Experience Codex AI in Action</h3>
+                    <p><strong>This interactive demo shows how Codex transforms natural language into working code.</strong></p>
                     
-                    <div class="concept-explanation">
-                        <h3>🔤 How Codex Understands and Generates Code</h3>
-                        <p><strong>Codex uses a sophisticated neural architecture to understand and generate code:</strong></p>
-                        
-                        <div class="architecture-details">
-                            <div class="architecture-component">
-                                <h4>🧠 Transformer Model</h4>
-                                <ul>
-                                    <li>Based on GPT-3 architecture (12 billion parameters)</li>
-                                    <li>Attention mechanisms understand code relationships</li>
-                                    <li>Contextual embedding of programming concepts</li>
-                                </ul>
+                    <div class="demo-container">
+                        <h4>💡 Try These Examples:</h4>
+                        <div class="demo-examples">
+                            <div class="example-card">
+                                <h5>Example 1: Data Processing</h5>
+                                <p><strong>Input:</strong> "Create a function to find the average of a list of numbers"</p>
+                                <div class="code-output">
+                                    <pre><code>def calculate_average(numbers):
+    if not numbers:
+        return 0
+    return sum(numbers) / len(numbers)
+
+# Example usage
+data = [10, 20, 30, 40, 50]
+result = calculate_average(data)
+print(f"Average: {result}")</code></pre>
+                                </div>
                             </div>
-                            <div class="architecture-component">
-                                <h4>📚 Training Process</h4>
-                                <ul>
-                                    <li>Trained on GitHub public repositories</li>
-                                    <li>Code documentation and Stack Overflow</li>
-                                    <li>Programming language specifications</li>
-                                    <li>Code comment associations</li>
-                                </ul>
+                            
+                            <div class="example-card">
+                                <h5>Example 2: Web API</h5>
+                                <p><strong>Input:</strong> "Create a REST API endpoint to get user information"</p>
+                                <div class="code-output">
+                                    <pre><code>from flask import Flask, jsonify
+app = Flask(__name__)
+
+@app.route('/api/user/<int:user_id>', methods=['GET'])
+def get_user(user_id):
+    # Simulate database lookup
+    user_data = {
+        'id': user_id,
+        'name': f'User {user_id}',
+        'email': f'user{user_id}@example.com'
+    }
+    return jsonify(user_data)</code></pre>
+                                </div>
                             </div>
-                            <div class="architecture-component">
-                                <h4>🎯 Understanding Mechanisms</h4>
-                                <ul>
-                                    <li>Syntax pattern recognition</li>
-                                    <li>Semantic meaning extraction</li>
-                                    <li>Context flow analysis</li>
-                                    <li>Intent inference from comments</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="generation-capabilities">
-                        <h3>⚡ Advanced Code Generation Features</h3>
-                        <div class="capabilities-list">
-                            <div class="capability-section">
-                                <h4>🔧 Multi-Modal Code Generation</h4>
-                                <ul>
-                                    <li>Natural language to code translation</li>
-                                    <li>Code-to-code transformation</li>
-                                    <li>Cross-language porting</li>
-                                    <li>Pseudocode to implementation</li>
-                                </ul>
-                            </div>
-                            <div class="capability-section">
-                                <h4>🧩 Complex Algorithm Implementation</h4>
-                                <ul>
-                                    <li>Sorting and searching algorithms</li>
-                                    <li>Data structure implementations</li>
-                                    <li>Mathematical computations</li>
-                                    <li>Graph and tree algorithms</li>
-                                </ul>
-                            </div>
-                            <div class="capability-section">
-                                <h4>🏗️ Application Architecture</h4>
-                                <ul>
-                                    <li>Class and interface definitions</li>
-                                    <li>Database schema generation</li>
-                                    <li>API endpoint creation</li>
-                                    <li>Configuration file generation</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="language-support">
-                        <h3>🌐 Multi-Language Proficiency</h3>
-                        <div class="languages-grid">
-                            <div class="language-category">
-                                <h4>💪 Strong Performance Languages</h4>
-                                <ul>
-                                    <li><strong>Python:</strong> 98% accuracy for common tasks</li>
-                                    <li><strong>JavaScript/TypeScript:</strong> Excellent React/Node.js support</li>
-                                    <li><strong>Java:</strong> Strong enterprise pattern recognition</li>
-                                    <li><strong>C#:</strong> .NET framework integration</li>
-                                </ul>
-                            </div>
-                            <div class="language-category">
-                                <h4>🎯 Framework Awareness</h4>
-                                <ul>
-                                    <li>Recognizes framework-specific patterns</li>
-                                    <li>Generates appropriate boilerplate code</li>
-                                    <li>Understands library conventions</li>
-                                    <li>Applies best practices per framework</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="limitations">
-                        <h3>⚠️ Important Limitations & Considerations</h3>
-                        <div class="limitations-grid">
-                            <div class="limitation-card">
-                                <h4>🔒 Security Concerns</h4>
-                                <ul>
-                                    <li>May suggest vulnerable code patterns</li>
-                                    <li>No built-in security scanning</li>
-                                    <li>Requires manual security review</li>
-                                    <li>May expose sensitive patterns from training</li>
-                                </ul>
-                            </div>
-                            <div class="limitation-card">
-                                <h4>📊 Quality Variations</h4>
-                                <ul>
-                                    <li>Accuracy decreases with complexity</li>
-                                    <li>May generate syntactically correct but logically flawed code</li>
-                                    <li>Performance optimization not guaranteed</li>
-                                    <li>Edge case handling may be incomplete</li>
-                                </ul>
-                            </div>
-                            <div class="limitation-card">
-                                <h4>⚖️ Ethical Considerations</h4>
-                                <ul>
-                                    <li>Potential copyright concerns</li>
-                                    <li>Bias from training data</li>
-                                    <li>Over-reliance reducing learning</li>
-                                    <li>Need for human oversight</li>
-                                </ul>
+                            
+                            <div class="example-card">
+                                <h5>Example 3: Algorithm</h5>
+                                <p><strong>Input:</strong> "Implement binary search algorithm"</p>
+                                <div class="code-output">
+                                    <pre><code>def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    
+    return -1  # Target not found</code></pre>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="video-section">
-                    <h3>🎬 Watch: Advanced Codex Capabilities</h3>
-                    <div class="video-placeholder">
-                        <div class="video-thumb">
-                            <span class="play-icon">▶️</span>
-                            <p><strong>Video:</strong> "Codex Code Generation: From Simple to Complex"</p>
-                            <p><em>Duration: 10-12 minutes</em></p>
+                <div class="interactive-section">
+                    <h3>🎯 Key Demonstration Points</h3>
+                    <div class="demo-points">
+                        <div class="point-card">
+                            <h4>🧠 Natural Language Understanding</h4>
+                            <p>Codex interprets human instructions and converts them into precise code logic.</p>
                         </div>
-                        <p class="video-description">Explore advanced Codex capabilities including multi-language support, complex algorithms, and professional development workflows.</p>
+                        <div class="point-card">
+                            <h4>⚡ Multiple Language Support</h4>
+                            <p>Generates code in Python, JavaScript, Java, C++, and many other programming languages.</p>
+                        </div>
+                        <div class="point-card">
+                            <h4>🔧 Context Awareness</h4>
+                            <p>Understands project context and generates appropriate code with proper imports and structure.</p>
+                        </div>
+                        <div class="point-card">
+                            <h4>🚀 Production Ready</h4>
+                            <p>Creates well-structured code with error handling and best practices.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        `,
-        quiz: {
-            question: "What is a key limitation to consider when using Codex for production code?",
-            options: [
-                "It may generate syntactically correct but logically flawed or insecure code",
-                "It only works with Python",
-                "It cannot generate more than 10 lines of code",
-                "It requires internet connection for every suggestion"
-            ],
-            answer: 0
-        }
-    },
-
-    // SHARED MODULES (used in both courses)
-    "codex-demo": {
-        type: 'interactive',
-        content: `
-            <div class="module-content">
-                <h2>💻 Hands-On: Code Generation Experience</h2>
-                <div class="demo-section">
-                    <h3>🎮 Try It Yourself!</h3>
-                    <p>Enter a description of what you want the code to do, and watch AI generate it for you!</p>
-                    <div class="prompt-demo">
-                        <label for="prompt-input">Describe what you want the code to do:</label>
-                        <input type="text" id="prompt-input" placeholder="e.g., 'Create a function that calculates the area of a circle'" />
-                        <button onclick="generateCode()">Generate Code</button>
-                        <div id="generated-code"></div>
+            
+            <div class="video-section">
+                <h3>🎬 Watch: Live Codex Demonstration</h3>
+                <div class="video-placeholder">
+                    <div class="video-thumb">
+                        <span class="play-icon">▶️</span>
+                        <p><strong>Video:</strong> "Codex AI: From Idea to Code in Seconds"</p>
+                        <p><em>Duration: 6-8 minutes</em></p>
                     </div>
-                    <div class="tips">
-                        <h4>💡 Try these examples:</h4>
-                        <ul>
-                            <li>"Create a loop that prints numbers 1 to 10"</li>
-                            <li>"Make a function that finds the largest number in a list"</li>
-                            <li>"Write code to sort a list of names alphabetically"</li>
-                            <li>"Create a simple calculator that adds two numbers"</li>
-                        </ul>
-                    </div>
+                    <p class="video-description">See real-time demonstrations of Codex generating complex algorithms, web applications, and data processing scripts from natural language descriptions.</p>
                 </div>
             </div>
-        `,
-        quiz: {
-            question: "What should you always do with AI-generated code?",
-            options: [
-                "Test it to make sure it works correctly",
-                "Use it immediately without checking",
-                "Delete it and write your own",
-                "Share it on social media"
-            ],
-            answer: 0
-        }
-    },
+        </div>
+    `,
+    quiz: {
+        question: "What makes Codex particularly powerful for developers?",
+        options: [
+            "It only works with Python programming",
+            "It converts natural language descriptions into working code across multiple programming languages",
+            "It can only create simple functions",
+            "It requires extensive coding knowledge to use"
+        ],
+        answer: 1
+    }
+},
     "escape-room": {
         type: 'game',
         content: `
@@ -1063,418 +1009,405 @@ let moduleContent = {
                 </div>
             </div>
         `
+    },
+    "codex-advanced": {
+        type: 'reading',
+        content: `
+            <div class="module-content">
+                <div class="reading-section">
+                    <h2>🚀 Advanced Codex Applications</h2>
+                    
+                    <div class="concept-explanation">
+                        <h3>💼 Professional Codex Usage</h3>
+                        <p><strong>Learn advanced techniques for using Codex in production environments.</strong></p>
+                        
+                        <div class="advanced-features">
+                            <h4>🔧 Production Considerations</h4>
+                            <ul>
+                                <li>Code review and testing protocols</li>
+                                <li>Security implications and best practices</li>
+                                <li>Performance optimization techniques</li>
+                                <li>Integration with development workflows</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `,
+        quiz: {
+            question: "What is most important when using Codex in production?",
+            options: [
+                "Thorough code review and testing",
+                "Using it for all code without review",
+                "Only using it for simple tasks",
+                "Avoiding it completely"
+            ],
+            answer: 0
+        }
+    },
+
+    "ai-strategy-case-study": {
+        type: 'reading',
+        content: `
+            <div class="module-content">
+                <div class="reading-section">
+                    <h2>📈 AI Strategy Case Study</h2>
+                    
+                    <div class="concept-explanation">
+                        <h3>🎯 Netflix AI Transformation</h3>
+                        <p><strong>How Netflix used AI strategy to become a global entertainment leader.</strong></p>
+                        
+                        <div class="case-study">
+                            <h4>📊 Implementation Strategy</h4>
+                            <ul>
+                                <li>Started with simple movie recommendations</li>
+                                <li>Collected user behavior data systematically</li>
+                                <li>Improved suggestions over time with machine learning</li>
+                                <li>Expanded to content creation and global markets</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `,
+        quiz: {
+            question: "What was key to Netflix's AI success?",
+            options: [
+                "Starting simple and continuously improving with data",
+                "Using the most expensive technology",
+                "Hiring only PhD researchers",
+                "Copying competitors exactly"
+            ],
+            answer: 0
+        }
     }
 };
 
-let currentModule = 0;
-let currentPretest = 0;
-let currentPosttest = 0;
+// Timing functions
+function startTimer() {
+    moduleStart = Date.now();
+}
 
-// Timing variables
-let pretestStart = null, pretestEnd = null, moduleStart = null, moduleEnd = null, posttestStart = null, posttestEnd = null;
+function endTimer() {
+    moduleEnd = Date.now();
+    const timeSpent = Math.round((moduleEnd - moduleStart) / 1000);
+    userData.timeSpent = (userData.timeSpent || 0) + timeSpent;
+}
 
-// DOM Elements
-const nameSection = document.getElementById('name-section');
-const pretestSection = document.getElementById('pretest-section');
-const courseSection = document.getElementById('course-section');
-const posttestSection = document.getElementById('posttest-section');
-const highscoreSection = document.getElementById('highscore-section');
-const progressBarContainer = document.getElementById('progress-bar-container');
-const progressBar = document.getElementById('progress-bar');
-
-// Name input
-const startBtn = document.getElementById('start-btn');
-startBtn.onclick = () => {
-    const name = document.getElementById('username').value.trim();
-    if (name) {
-        userData.name = name;
-        userData.startTime = Date.now();
-        pretestStart = Date.now();
-        nameSection.style.display = 'none';
-        progressBarContainer.style.display = 'block';
-        showPretest();
-    }
-};
+// Name input handled in DOMContentLoaded event
 
 function showPretest() {
-    pretestSection.style.display = 'block';
-    showPretestQuestion();
-}
-
-function showPretestQuestion() {
-    const quizDiv = document.getElementById('pretest-quiz');
-    quizDiv.innerHTML = '';
-    if (currentPretest < shuffledPretestQuestions.length) {
-        const q = shuffledPretestQuestions[currentPretest];
-        quizDiv.innerHTML = `<p>Question ${currentPretest+1} of ${shuffledPretestQuestions.length}</p><p>${q.q}</p>` + q.options.map((opt, i) => `<button class='option-btn' onclick='selectPretest(${i})'>${opt}</button>`).join('');
+    // Hide all other sections first
+    document.querySelectorAll('section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show pretest section
+    const pretestSection = document.getElementById('pretest-section');
+    if (pretestSection) {
+        pretestSection.style.display = 'block';
+        console.log('Pretest section shown');
+        
+        // Initialize pretest questions if not already done
+        if (!window.shuffledPretestQuestions) {
+            initializePretestQuestions();
+        }
+        
+        // Show first pretest question
+        showPretestQuestion();
     } else {
-        pretestEnd = Date.now();
-        userData.pretestTime = Math.round((pretestEnd-pretestStart)/1000);
-        
-        // Determine proficiency level based on pretest results
-        determineProficiencyLevel();
-        
-        // Show proficiency level result
-        showProficiencyResult();
+        console.error('Pretest section not found in HTML');
+        alert('Error: Pretest section not found');
     }
 }
 
-function showProficiencyResult() {
+// Add this function to properly start the pretest
+function startPretest() {
+    console.log('Starting pretest...');
+    
+    // Hide all sections first
+    document.querySelectorAll('section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Show pretest section
+    const pretestSection = document.getElementById('pretest-section');
+    if (pretestSection) {
+        pretestSection.style.display = 'block';
+        console.log('Pretest section shown');
+        
+        // Initialize current question index
+        currentQuestionIndex = 0;
+        
+        // Show first pretest question
+        showPretestQuestion();
+    } else {
+        console.error('Pretest section not found in HTML');
+        alert('Error: Pretest section not found');
+    }
+}
+
+// Add this function to show pretest questions
+function showPretestQuestion() {
     const quizDiv = document.getElementById('pretest-quiz');
-    const correctAnswers = userData.pretest.filter(x => x.correct).length;
-    const recommendedLevel = userData.proficiencyLevel;
-    const recommendedCourse = recommendedLevel === 'beginner' ? 'Beginner' : 'Intermediate';
-    const alternativeCourse = recommendedLevel === 'beginner' ? 'Intermediate' : 'Beginner';
+    if (!quizDiv) {
+        console.error('Pretest quiz div not found');
+        return;
+    }
+    
+    if (currentQuestionIndex >= shuffledPretestQuestions.length) {
+        // Pretest complete
+        completePretestAssessment();
+        return;
+    }
+    
+    const question = shuffledPretestQuestions[currentQuestionIndex];
     
     quizDiv.innerHTML = `
-        <div class="proficiency-result">
-            <h3>📊 Assessment Complete!</h3>
-            <p><strong>Your Score:</strong> ${correctAnswers}/${shuffledPretestQuestions.length}</p>
-            
-            <div class="course-recommendation">
-                <h4>🎯 Recommended Course</h4>
-                <div class="recommended-course-card">
-                    <h5>✨ ${recommendedCourse} Level (Recommended)</h5>
-                    <p>${recommendedLevel === 'beginner' 
-                        ? 'Perfect for getting started! We\'ll cover AI fundamentals with clear explanations and practical examples.' 
-                        : 'Great for diving deeper! We\'ll explore advanced AI concepts, technical details, and real-world applications.'}</p>
-                    <button onclick="startCourse('${recommendedLevel}')" class="start-course-btn recommended">
-                        🚀 Start ${recommendedCourse} Course (Recommended)
-                    </button>
-                </div>
-            </div>
-            
-            <div class="alternative-course">
-                <h4>🔄 Alternative Option</h4>
-                <div class="alternative-course-card">
-                    <h5>${alternativeCourse} Level</h5>
-                    <p>${recommendedLevel === 'beginner' 
-                        ? 'Want a challenge? This covers advanced AI applications, technical depth, and professional use cases.' 
-                        : 'Prefer the basics? This starts from fundamentals with simple explanations and beginner-friendly examples.'}</p>
-                    <button onclick="startCourse('${recommendedLevel === 'beginner' ? 'intermediate' : 'beginner'}')" class="start-course-btn alternative">
-                        📚 Choose ${alternativeCourse} Course Instead
-                    </button>
-                </div>
-            </div>
-            
-            <div class="course-preview">
-                <p><em>💡 You can always adjust your learning path as you progress!</em></p>
+        <div class="question-container">
+            <h3>Question ${currentQuestionIndex + 1} of ${shuffledPretestQuestions.length}</h3>
+            <p class="question-text">${question.q}</p>
+            <div class="options">
+                ${question.options.map((option, index) => `
+                    <button class="option-btn" onclick="selectPretestAnswer(${index})">${option}</button>
+                `).join('')}
             </div>
         </div>
     `;
 }
 
-window.startCourse = function(chosenLevel) {
-    // Update user data with their chosen level
-    userData.proficiencyLevel = chosenLevel;
-    userData.coursePath = chosenLevel;
+// Add this function to handle pretest answers
+function selectPretestAnswer(selectedIndex) {
+    const question = shuffledPretestQuestions[currentQuestionIndex];
+    const isCorrect = selectedIndex === question.answer;
     
-    // Set the current course based on chosen level
-    currentCourse = courseStructure[chosenLevel];
+    // Store the answer
+    userData.pretest.push({
+        question: question.q,
+        selectedAnswer: selectedIndex,
+        correctAnswer: question.answer,
+        correct: isCorrect,
+        difficulty: question.difficulty
+    });
     
-    // Set the appropriate posttest based on course level
-    if (chosenLevel === 'beginner') {
-        shuffledPosttestQuestions = shuffledBeginnerPosttest;
+    console.log(`Answer ${currentQuestionIndex + 1}:`, isCorrect ? 'Correct' : 'Incorrect');
+    
+    // Move to next question
+    currentQuestionIndex++;
+    
+    // Small delay then show next question
+    setTimeout(() => {
+        showPretestQuestion();
+    }, 500);
+}
+
+// Add this function to complete pretest assessment
+function completePretestAssessment() {
+    console.log('Pretest completed');
+    
+    // Determine proficiency level
+    const correctAnswers = userData.pretest.filter(x => x.correct).length;
+    const score = correctAnswers / shuffledPretestQuestions.length;
+    
+    if (score >= 0.8) {
+        userData.proficiencyLevel = 'intermediate';
     } else {
-        shuffledPosttestQuestions = shuffledIntermediatePosttest;
+        userData.proficiencyLevel = 'beginner';
     }
     
-    // Hide pretest section and start course
-    pretestSection.style.display = 'none';
-    moduleStart = Date.now();
-    updateGameHeaderForCourse();
-    courseSection.style.display = 'block';
+    console.log(`Proficiency level: ${userData.proficiencyLevel} (${correctAnswers}/${shuffledPretestQuestions.length})`);
+    
+    // Set current course
+    determineProficiencyLevel();
+    
+    // Start the course modules
+    setTimeout(() => {
+        startCourseModules();
+    }, 1000);
+}
+
+// Add this function to start course modules
+function startCourseModules() {
+    console.log('Starting course modules...');
+    
+    // Hide pretest section
+    document.getElementById('pretest-section').style.display = 'none';
+    
+    // Show course section
+    document.getElementById('course-section').style.display = 'block';
+    
+    // Initialize and show first module
+    window.currentModule = 0;
     showModule();
-};
-
-// Keep the old function for compatibility but redirect to new one
-window.startAdaptiveCourse = function() {
-    startCourse(userData.proficiencyLevel);
-};
-
-window.selectPretest = function(i) {
-    userData.pretest.push({q: shuffledPretestQuestions[currentPretest].q, selected: i, correct: i === shuffledPretestQuestions[currentPretest].answer});
-    currentPretest++;
-    updateProgress();
-    showPretestQuestion();
-};
+}
 
 function startCourse() {
-    courseSection.style.display = 'block';
+    const courseSection = document.getElementById('course-section');
+    if (courseSection) courseSection.style.display = 'block';
     showModule();
 }
 
 function showModule() {
-    if (currentModule < currentCourse.length) {
-        const module = currentCourse[currentModule];
-        const moduleData = moduleContent[module.id];
-        
-        const contentDiv = document.getElementById('course-content');
-        const nextBtn = document.getElementById('course-next-btn');
-        
-        // Scroll to top when showing new module
-        window.scrollTo(0, 0);
-        
-        // Check if this module uses single-page navigation (all reading modules now use pages)
-        if (moduleData.type === 'reading') {
-            showModuleWithPages(module, moduleData, contentDiv, nextBtn);
-        } else {
-            // Display full module content for non-reading modules (welcome, interactive, game, reflection)
-            contentDiv.innerHTML = `
-                <div class="module-header">
-                    <h1>${module.title}</h1>
-                    <p class="objective"><strong>Objective:</strong> ${module.objective}</p>
-                </div>
+    console.log('showModule called, currentModule:', currentModule);
+    console.log('currentCourse:', currentCourse);
+    console.log('currentCourse length:', currentCourse ? currentCourse.length : 'undefined');
+    
+    if (!currentCourse || currentModule >= currentCourse.length) {
+        console.log('Course completed, showing posttest');
+        const courseSection = document.getElementById('course-section');
+        if (courseSection) courseSection.style.display = 'none';
+        showPosttest();
+        return;
+    }
+    
+    const module = currentCourse[currentModule];
+    console.log('Current module:', module);
+    
+    if (!module || !module.id) {
+        console.error('Invalid module:', module);
+        currentModule++;
+        showModule();
+        return;
+    }
+    
+    const moduleData = moduleContent[module.id];
+    console.log('Module data found for', module.id, ':', !!moduleData);
+    
+    if (!moduleData) {
+        console.error(`Module data not found for: ${module.id}`);
+        console.log('Available modules:', Object.keys(moduleContent));
+        currentModule++;
+        showModule();
+        return;
+    }
+    
+    const contentDiv = document.getElementById('course-content');
+    const nextBtn = document.getElementById('course-next-btn');
+    
+    if (!contentDiv || !nextBtn) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+    
+    // Make sure course section is visible
+    const courseSection = document.getElementById('course-section');
+    if (courseSection) courseSection.style.display = 'block';
+    
+    // Show the content
+    // ✅ ADD ERROR HANDLING:
+    try {
+        contentDiv.innerHTML = `
+            <div class="module-header">
+                <h3>${module.title || 'Module Title'}</h3>
+                <p class="module-objective">${module.objective || 'Module Objective'}</p>
+                <div class="module-progress">Module ${currentModule + 1} of ${currentCourse.length}</div>
+            </div>
+            <div class="module-content">
                 ${moduleData.content}
-            `;
+            </div>
+        `;
+    } catch (error) {
+        console.error('Error displaying module content:', error);
+        contentDiv.innerHTML = '<p>Error loading module content. Please try again.</p>';
+    }
+    
+    console.log('Content set, showing next button');
+    
+    // Show and configure next button
+    nextBtn.style.display = 'block';
+    nextBtn.onclick = function() {
+        console.log('Next button clicked');
+        
+        // Mark module as completed
+        if (userData && !userData.moduleProgress.includes(module.id)) {
+            userData.moduleProgress.push(module.id);
+            userData.points += 10;
             
-            // Show quiz if module has one
-            if (moduleData.quiz) {
-                contentDiv.innerHTML += `
-                    <div class="quiz-section">
-                        <h3>📝 Quick Check</h3>
-                        <p>${moduleData.quiz.question}</p>
-                        ${moduleData.quiz.options.map((opt, i) => 
-                            `<button class='option-btn' onclick='selectModuleAnswer(${i})'>${opt}</button>`
-                        ).join('')}
-                    </div>
-                `;
-                nextBtn.style.display = 'none';
-            } else {
-                nextBtn.style.display = 'block';
+            if (typeof showScoreAnim === 'function') {
+                showScoreAnim(10);
+            }
+            
+            // Award badges based on progress
+            if (userData.moduleProgress.length === 1) {
+                if (typeof awardBadge === 'function') {
+                    awardBadge("Course Starter");
+                }
+            } else if (userData.moduleProgress.length === Math.floor(currentCourse.length / 2)) {
+                if (typeof awardBadge === 'function') {
+                    awardBadge("Halfway Hero");
+                }
+            } else if (userData.moduleProgress.length === currentCourse.length) {
+                if (typeof awardBadge === 'function') {
+                    awardBadge("Course Completer");
+                }
             }
         }
         
-        updateProgress();
-        updateModuleProgress();
-    } else {
-        // All modules completed, go to posttest
-        moduleEnd = Date.now();
-        courseSection.style.display = 'none';
-        posttestStart = Date.now();
-        showPosttest();
-    }
-}
-
-function showModuleWithPages(module, moduleData, contentDiv, nextBtn) {
-    let currentPage = 0;
-    let totalPages = 0;
-    let modulePages = [];
-    
-    // Parse the module content into pages
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(moduleData.content, 'text/html');
-    const readingSection = doc.querySelector('.reading-section');
-    const videoSection = doc.querySelector('.video-section');
-      if (readingSection) {
-        // Split reading section into logical pages based on content sections
-        const sections = readingSection.querySelectorAll('.concept-explanation, .comparison-section, .real-examples, .capabilities-section, .who-benefits, .example-demo, .suggestion-mechanisms, .advanced-features, .best-practices, .agent-cycle, .agent-types, .real-world-systems, .generation-capabilities, .language-support, .limitations, .daily-life-examples, .popular-examples, .how-it-works, .architecture-overview');
-        
-        // If no specific sections found, split by main content divs
-        if (sections.length === 0) {
-            const allDivs = readingSection.querySelectorAll('div');
-            allDivs.forEach((section, index) => {
-                if (section.children.length > 0) {
-                    modulePages.push({
-                        type: 'content',
-                        content: `
-                            <div class="module-header">
-                                <h1>${module.title}</h1>
-                                <p class="objective"><strong>Objective:</strong> ${module.objective}</p>
-                            </div>
-                            <div class="reading-section">
-                                ${section.outerHTML}
-                            </div>
-                        `
-                    });
-                }
-            });
-        } else {
-            // Use the found sections
-            sections.forEach((section, index) => {
-                modulePages.push({
-                    type: 'content',
-                    content: `
-                        <div class="module-header">
-                            <h1>${module.title}</h1>
-                            <p class="objective"><strong>Objective:</strong> ${module.objective}</p>
-                        </div>
-                        <div class="reading-section">
-                            ${section.outerHTML}
-                        </div>
-                    `
-                });
-            });
-        }
-    }
-    
-    // Add video page if exists
-    if (videoSection) {
-        modulePages.push({
-            type: 'video',
-            content: `
-                <div class="module-header">
-                    <h1>${module.title}</h1>
-                    <p class="objective"><strong>Objective:</strong> ${module.objective}</p>
-                </div>
-                ${videoSection.outerHTML}
-            `
-        });
-    }
-    
-    // Add quiz page
-    if (moduleData.quiz) {
-        modulePages.push({
-            type: 'quiz',
-            content: `
-                <div class="module-header">
-                    <h1>${module.title}</h1>
-                    <p class="objective"><strong>Objective:</strong> ${module.objective}</p>
-                </div>
-                <div class="quiz-section">
-                    <h3>📝 Quick Check</h3>
-                    <p>${moduleData.quiz.question}</p>
-                    ${moduleData.quiz.options.map((opt, i) => 
-                        `<button class='option-btn' onclick='selectModuleAnswer(${i})'>${opt}</button>`
-                    ).join('')}
-                </div>
-            `
-        });
-    }
-    
-    totalPages = modulePages.length;
-    
-    function renderCurrentPage() {
-        const page = modulePages[currentPage];
-        contentDiv.innerHTML = `
-            ${page.content}
-            <div class="page-navigation">
-                <div class="page-indicator">
-                    Page ${currentPage + 1} of ${totalPages}
-                </div>
-                <div class="page-controls">
-                    ${currentPage > 0 ? '<button onclick="previousPage()" class="nav-btn prev-btn">← Previous</button>' : ''}
-                    ${currentPage < totalPages - 1 ? '<button onclick="nextPage()" class="nav-btn next-btn">Next →</button>' : ''}
-                </div>
-            </div>
-        `;
-        
-        // Hide the main next button for page navigation
-        if (page.type === 'quiz') {
-            nextBtn.style.display = 'none';
-        } else if (currentPage === totalPages - 1) {
-            nextBtn.style.display = 'block';
-        } else {
-            nextBtn.style.display = 'none';
-        }
-    }
-      // Page navigation functions
-    window.nextPage = function() {
-        if (currentPage < totalPages - 1) {
-            currentPage++;
-            renderCurrentPage();
-            window.scrollTo(0, 0);
-        }
-    };
-    
-    window.previousPage = function() {
-        if (currentPage > 0) {
-            currentPage--;
-            renderCurrentPage();
-            window.scrollTo(0, 0);
-        }
-    };
-    
-    // Initial render
-    renderCurrentPage();
-}
-
-window.selectModuleAnswer = function(selectedIndex) {
-    const module = currentCourse[currentModule];
-    const moduleData = moduleContent[module.id];
-    const isCorrect = selectedIndex === moduleData.quiz.answer;
-    
-    // Record answer
-    userData.moduleProgress.push({
-        moduleId: module.id,
-        moduleTitle: module.title,
-        completed: true,
-        quizCorrect: isCorrect,
-        timestamp: Date.now()
-    });
-    
-    if (isCorrect) {
-        userData.points += 10;
-        showScoreAnim(10);
-        
-        // Award badge based on module outcome
-        if (module.outcome && module.outcome.includes('Badge:')) {
-            const badgeName = module.outcome.split('Badge: ')[1].split(',')[0];
-            awardBadge(badgeName);
-        }
-    }
-    
-    // Disable all quiz buttons to prevent multiple submissions
-    const quizButtons = document.querySelectorAll('.option-btn');
-    quizButtons.forEach(btn => {
-        btn.disabled = true;
-        if (btn.onclick && btn.onclick.toString().includes(`selectModuleAnswer(${selectedIndex})`)) {
-            btn.style.background = isCorrect ? '#4CAF50' : '#f44336';
-            btn.style.color = 'white';
-        }
-    });
-    
-    // Show correct answer if wrong
-    if (!isCorrect) {
-        quizButtons[moduleData.quiz.answer].style.background = '#4CAF50';
-        quizButtons[moduleData.quiz.answer].style.color = 'white';
-    }
-    
-    // Move to next module after delay
-    setTimeout(() => {
+        // Move to next module
         currentModule++;
-        updateProgress();
+        if (typeof updateProgress === 'function') {
+            updateProgress();
+        }
+        console.log('Moving to next module:', currentModule);
         showModule();
-    }, 2000);
-};
-
-document.getElementById('course-next-btn').onclick = () => {
-    const module = currentCourse[currentModule];
+    };
     
-    // Record module completion without quiz
-    userData.moduleProgress.push({
-        moduleId: module.id,
-        moduleTitle: module.title,
-        completed: true,
-        timestamp: Date.now()
-    });
-    
-    // Award badge for completion
-    if (module.outcome && module.outcome.includes('Badge:')) {
-        const badgeName = module.outcome.split('Badge: ')[1].split(',')[0];
-        awardBadge(badgeName);
+    if (typeof updateProgress === 'function') {
+        updateProgress();
     }
-    
-    currentModule++;
-    updateProgress();
-    showModule();
-};
+}
 
 function showPosttest() {
-    posttestSection.style.display = 'block';
-    showPosttestQuestion();
+    console.log('Starting posttest...');
+    
+    // Ensure posttest questions are set
+    if (!shuffledPosttestQuestions || shuffledPosttestQuestions.length === 0) {
+        console.error('Posttest questions not available');
+        // Fallback to default based on current course
+        if (userData.proficiencyLevel === 'beginner') {
+            shuffledPosttestQuestions = shuffledBeginnerPosttest;
+        } else {
+            shuffledPosttestQuestions = shuffledIntermediatePosttest;
+        }
+        console.log('Set fallback posttest questions:', shuffledPosttestQuestions.length);
+    }
+    
+    // Hide all sections
+    document.querySelectorAll('section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Set posttest timing
+    posttestStart = Date.now();
+    
+    // Reset posttest counter
+    currentPosttest = 0;
+    
+    // Show posttest section
+    const posttestSection = document.getElementById('posttest-section');
+    if (posttestSection) {
+        posttestSection.style.display = 'block';
+        showPosttestQuestion();
+    } else {
+        console.error('Posttest section not found');
+    }
 }
 
 function showPosttestQuestion() {
+    console.log(`Showing posttest question ${currentPosttest + 1} of ${shuffledPosttestQuestions.length}`);
+    
     const quizDiv = document.getElementById('posttest-quiz');
     quizDiv.innerHTML = '';
+    
     if (currentPosttest < shuffledPosttestQuestions.length) {
         const q = shuffledPosttestQuestions[currentPosttest];
         quizDiv.innerHTML = `<p>Question ${currentPosttest+1} of ${shuffledPosttestQuestions.length}</p><p>${q.q}</p>` + q.options.map((opt, i) => `<button class='option-btn' onclick='selectPosttest(${i})'>${opt}</button>`).join('');
     } else {
+        console.log('Posttest completed! Moving to reflection...');
         posttestEnd = Date.now();
         userData.posttestTime = Math.round((posttestEnd-posttestStart)/1000);
-        posttestSection.style.display = 'none';
+        const posttestSection = document.getElementById('posttest-section');
+        if (posttestSection) posttestSection.style.display = 'none';
         showReflectionFeedback();
     }
 }
@@ -1487,19 +1420,29 @@ window.selectPosttest = function(i) {
 };
 
 function showReflectionFeedback() {
+    console.log('Starting reflection feedback...');
+    
     // Create and show reflection section
     const reflectionSection = document.createElement('section');
     reflectionSection.id = 'reflection-section';
     reflectionSection.innerHTML = `
-        <h2>🎯 Course Reflection & Feedback</h2>
-        <div class="reflection-content">
-            ${moduleContent.reflection.content}
-        </div>
+        ${moduleContent.reflection.content}
     `;
     
+    console.log('Reflection section created');
+    
     // Insert after posttest section
-    posttestSection.insertAdjacentElement('afterend', reflectionSection);
+    const posttestSection = document.getElementById('posttest-section');
+    if (posttestSection) {
+        posttestSection.insertAdjacentElement('afterend', reflectionSection);
+        console.log('Reflection section inserted after posttest');
+    } else {
+        document.getElementById('main-container').appendChild(reflectionSection);
+        console.log('Reflection section appended to main container');
+    }
     reflectionSection.style.display = 'block';
+    
+    console.log('Reflection section displayed');
     
     // Update progress summary
     updateProgressSummary();
@@ -1522,7 +1465,7 @@ function updateProgressSummary() {
                     </div>
                     <div class="summary-item">
                         <span class="label">📚 Modules Completed:</span>
-                        <span class="value">${modulesCompleted}/${courseStructure.length}</span>
+                        <span class="value">${modulesCompleted}/${currentCourse.length}</span>
                     </div>
                     <div class="summary-item">
                         <span class="label">🏆 Badges Earned:</span>
@@ -1552,6 +1495,7 @@ function awardBadge(badgeName) {
     if (!userData.badges.includes(badgeName)) {
         userData.badges.push(badgeName);
         showBadge(`🏆 ${badgeName}`);
+        userData.points += 20;
     }
 }
 
@@ -1563,23 +1507,7 @@ function updateModuleProgress() {
     }
 }
 
-// Interactive functions for modules
-window.generateCode = function() {
-    const prompt = document.getElementById('prompt-input').value;
-    const codeDiv = document.getElementById('generated-code');
-    
-    // Mock code generation
-    const mockCode = `
-# Generated code for: "${prompt}"
-for i in range(1, 11):
-    print(f"Number: {i}")
-    `;
-    
-    codeDiv.innerHTML = `<pre><code>${mockCode}</code></pre>`;
-    userData.points += 5;
-    showScoreAnim(5);
-};
-
+// Fix evaluatePrompt function:
 window.evaluatePrompt = function() {
     const prompt = document.getElementById('challenge-prompt').value;
     const feedbackDiv = document.getElementById('prompt-feedback');
@@ -1587,320 +1515,396 @@ window.evaluatePrompt = function() {
     let score = 0;
     let feedback = "";
     
-    if (prompt.length > 50) score += 20;
-    if (prompt.includes('function') || prompt.includes('class')) score += 20;
-    if (prompt.includes('example') || prompt.includes('comment')) score += 20;
-    
-    if (score >= 40) {
-        feedback = "🌟 Excellent prompt! Clear, detailed, and well-structured.";
-        awardBadge("Prompt Wizard");
-    } else if (score >= 20) {
-        feedback = "👍 Good prompt! Could be more detailed.";
+    // Simple evaluation logic
+    if (prompt.length > 10) {
+        score = 5;
+        feedback = "Great prompt! You provided good detail.";
     } else {
-        feedback = "💡 Try to be more specific and detailed in your prompt.";
+        score = 2;
+        feedback = "Try to be more specific in your prompt.";
     }
     
+    feedbackDiv.innerHTML = `<p><strong>Score:</strong> ${score}/5</p><p>${feedback}</p>`;
     userData.points += score;
-    feedbackDiv.innerHTML = `<p>${feedback}</p><p>Points earned: ${score}</p>`;
     showScoreAnim(score);
 };
-
-window.checkEscapeAnswer = function(room) {
-    const answer = document.getElementById('escape-answer').value.toLowerCase();
-    const roomContent = document.getElementById('room-content');
-    
-    if (room === 1 && answer.includes('agentive')) {
-        userData.points += 30;
-        showScoreAnim(30);
-        roomContent.innerHTML = `
-            <h3>🎉 Room 1 Unlocked!</h3>
-            <p>Correct! Agentive AI would be perfect for automatically organizing emails.</p>
-            <button onclick="nextEscapeRoom()">Next Room</button>
-        `;
-    } else {
-        roomContent.innerHTML += `<p style="color: red;">Try again! Think about AI that acts on your behalf.</p>`;
-    }
-};
-
-window.nextEscapeRoom = function() {
-    // For now, just award the completion badge and move on
-    awardBadge("Escape Master");
-    currentModule++;
-    showModule();
-};
-
-window.submitFeedback = function() {
-    const enjoyFeedback = document.getElementById('enjoy-feedback').value;
-    const improveFeedback = document.getElementById('improve-feedback').value;
-    
-    userData.feedback = {
-        enjoyed: enjoyFeedback,
-        improvements: improveFeedback
-    };
-    
-    // Set end time here since this is the actual completion
-    userData.endTime = Date.now();
-    
-    showBadge("🎓 Course Complete!");
-    
-    // Hide reflection section and show results
-    document.getElementById('reflection-section').style.display = 'none';
-    setTimeout(() => showResults(), 2000);
-};
-
-window.downloadCertificate = function() {
-    const certificate = `
-🏆 CERTIFICATE OF COMPLETION 🏆
-
-This certifies that ${userData.name} has successfully completed
-the Agentive AI & Codex Learning Adventure
-
-Modules Completed: ${userData.moduleProgress.length}
-Badges Earned: ${userData.badges.join(', ')}
-Total Points: ${userData.points}
-
-Date: ${new Date().toLocaleDateString()}
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        z-index: 1000;
     `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
     
-    const blob = new Blob([certificate], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${userData.name}_AI_Certificate.txt`;
-    a.click();
-};
-
-// Google Sheets endpoint (replace with your actual endpoint)
-const GOOGLE_SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxZrzC_6T07J-uGXbPwFL5bD4yxrXelVgAoogXmhvZaDx6cExNzT_MIP9qVVsY2UbWW/exec';
-
-function exportToGoogleSheets() {
-    // Calculate the required data
-    const pretestScore = userData.pretest.filter(x => x.correct).length;
-    const posttestScore = userData.posttest.filter(x => x.correct).length;
-    const modulesCompleted = userData.moduleProgress.length;
-    const highScore = userData.points;
-    const improvement = userData.feedback.improvements || '';
-    const enjoyment = userData.feedback.enjoyed || '';
-      // Format data according to Google Sheets headers
-    const exportData = {
-        Timestamp: new Date().toISOString(),
-        Name: userData.name,
-        "Course Path": userData.proficiencyLevel,
-        "Pre-test Score": `${pretestScore}/${shuffledPretestQuestions.length}`,
-        "Post-test Score": `${posttestScore}/${shuffledPosttestQuestions.length}`,
-        "Modules Completed": `${modulesCompleted}/${currentCourse.length}`,
-        "High Score": highScore,
-        Improvement: improvement,
-        Enjoyment: enjoyment
-    };
-    
-    console.log('Sending data to Google Sheets:', exportData);
-    
-    // Primary method: POST with JSON
-    fetch(GOOGLE_SHEETS_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(exportData)
-    }).then(response => {
-        console.log('Primary method response:', response);
-        return response.text();
-    }).then(data => {
-        console.log('Response data:', data);
-        try {
-            const parsed = JSON.parse(data);
-            if (parsed.status === 'success') {
-                console.log('Data sent successfully via primary method');
-                showBadge('📊 Data Saved to Sheets!');
-            } else {
-                throw new Error('Server returned error: ' + parsed.message);
-            }
-        } catch (e) {
-            console.log('Primary method failed, trying alternative...');
-            sendViaFormMethod(exportData);
-        }
-    }).catch(error => {
-        console.error('Primary method error:', error);
-        console.log('Trying alternative form method...');
-        sendViaFormMethod(exportData);
-    });
-}
-
-function sendViaFormMethod(exportData) {
-    // Alternative method: Form submission
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = GOOGLE_SHEETS_ENDPOINT;
-    form.style.display = 'none';
-    
-    // Create hidden inputs for each data field
-    Object.keys(exportData).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = exportData[key];
-        form.appendChild(input);
-    });
-    
-    // Add form to body, submit, then remove
-    document.body.appendChild(form);
-    
-    // Create iframe to handle response without page redirect
-    const iframe = document.createElement('iframe');
-    iframe.name = 'hidden_iframe';
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
-    form.target = 'hidden_iframe';
-    
-    form.submit();
-    
-    // Clean up after submission
     setTimeout(() => {
-        document.body.removeChild(form);
-        document.body.removeChild(iframe);
-        console.log('Form method completed');
-        showBadge('📊 Data Sent via Form!');
+        notification.remove();
     }, 3000);
 }
 
-function saveData() {
-    // Save to localStorage for now, can be exported for analysis
-    let dataset = JSON.parse(localStorage.getItem('dataset') || '[]');
-    dataset.push(userData);
-    localStorage.setItem('dataset', JSON.stringify(dataset));
-}
-
-// Analytics for module completion
-function updateAnswerAnalytics() {
-    if (!localStorage.getItem('moduleAnalytics')) {
-        let analytics = {modules: []};
-        analytics.modules = courseStructure.map(module => ({
-            id: module.id,
-            completions: 0,
-            avgScore: 0
-        }));
-        localStorage.setItem('moduleAnalytics', JSON.stringify(analytics));
-    }
-    
-    let analytics = JSON.parse(localStorage.getItem('moduleAnalytics'));
-    userData.moduleProgress.forEach((progress, idx) => {
-        if (analytics.modules[idx]) {
-            analytics.modules[idx].completions++;
-        }
-    });
-    localStorage.setItem('moduleAnalytics', JSON.stringify(analytics));
-}
-
-function showResults() {
-    highscoreSection.style.display = 'block';
-    const resultsDiv = document.getElementById('results');
-    const modulesCompleted = userData.moduleProgress.length;
-    const quizScore = userData.moduleProgress.filter(m => m.quizCorrect).length;
+function exportToGoogleSheets() {
     const pretestScore = userData.pretest.filter(x => x.correct).length;
     const posttestScore = userData.posttest.filter(x => x.correct).length;
-    const totalTime = Math.round((userData.endTime - userData.startTime) / 1000);
+    const modulesCompleted = userData.moduleProgress.length;
+    const totalTime = userData.endTime ? Math.round((userData.endTime - userData.startTime) / 1000) : 0;
+    
+    // Format data for Google Sheets
+    const startDate = new Date(userData.startTime);
+    const endDate = new Date(userData.endTime || Date.now());
+    const dateStr = startDate.toLocaleDateString();
+    const startTimeStr = startDate.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    const endTimeStr = endDate.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+    const timestampFormat = `${dateStr}|${startTimeStr} to ${endTimeStr}`;
+    
+    const exportData = {
+        'Timestamp': timestampFormat,
+        'Name': userData.name,
+        'Course Path': userData.proficiencyLevel,
+        'Pre-test Score': `${pretestScore}/${shuffledPretestQuestions.length}`,
+        'Post-test Score': `${posttestScore}/${shuffledPosttestQuestions.length}`,
+        'Modules Completed': `${modulesCompleted}/${currentCourse ? currentCourse.length : 0}`,
+        'High Score': userData.points,
+        'Badges Earned': userData.badges.join(', '),
+        'Total Time (seconds)': totalTime,
+        'Pretest Time (seconds)': userData.pretestTime || 0,
+        'Posttest Time (seconds)': userData.posttestTime || 0,
+        'Improvement Feedback': userData.feedback?.improvements || '',
+        'Enjoyment Feedback': userData.feedback?.enjoyed || ''
+    };
+    
+    console.log('Exporting data to Google Sheets:', exportData);
+    
+    const GOOGLE_SHEETS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxth09pVHpw9Cwg_oF1Ay8jh9kUOQWs_0G9aGsSiG_B4uWS7uVn_LF74CQWcYWRPTYDRA/exec';
+    
+    // Show loading message
+    showNotification('📤 Saving data to Google Sheets...');
+    
+    // Use FormData instead of JSON for better compatibility with Google Apps Script
+    const formData = new FormData();
+    Object.keys(exportData).forEach(key => {
+        formData.append(key, exportData[key]);
+    });
+    
+    fetch(GOOGLE_SHEETS_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors', // This helps with CORS issues
+        body: formData
+    })
+    .then(response => {
+        // With no-cors mode, we can't read the response, so assume success
+        console.log('Request sent to Google Sheets');
+        showNotification('✅ Data sent to Google Sheets!');
+    })
+    .catch(error => {
+        console.error('Error saving to Google Sheets:', error);
+        
+        // Fallback: Try with different approach
+        console.log('Trying alternative method...');
+        
+        // Create a form and submit it (this often works better with Google Apps Script)
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = GOOGLE_SHEETS_ENDPOINT;
+        form.target = '_blank';
+        form.style.display = 'none';
+        
+        Object.keys(exportData).forEach(key => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = exportData[key];
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        
+        showNotification('✅ Data submitted to Google Sheets via form!');
+    });
+}
+
+function saveToLocalStorage(data) {
+    try {
+        // ✅ FIXED: Correct parentheses placement
+        let localData = JSON.parse(localStorage.getItem('courseData') || '[]');
+        localData.push(data);
+        localStorage.setItem('courseData', JSON.stringify(localData));
+        console.log('Data saved to localStorage:', data);
+        showNotification('💾 Data saved locally as backup');
+    } catch (error) {
+        console.error('Error saving to localStorage:', error);
+        showNotification('❌ Error saving data locally');
+    }
+}
+
+function showBadge(badgeText) {
+    // Remove any existing badge elements and styles
+    const existingBadges = document.querySelectorAll('[data-badge-element]');
+    existingBadges.forEach(badge => badge.remove());
+    
+    const existingStyles = document.querySelectorAll('style[data-badge-style]');
+    existingStyles.forEach(style => style.remove());
+    
+    // Create new style with identifier
+    const style = document.createElement('style');
+    style.setAttribute('data-badge-style', 'true');
+    style.textContent = `
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    const badgeDiv = document.createElement('div');
+    badgeDiv.setAttribute('data-badge-element', 'true'); // Add identifier
+    badgeDiv.style.cssText = `
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(45deg, #FF9800, #FF5722);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 15px;
+        font-size: 20px;
+        font-weight: bold;
+        z-index: 1000;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        animation: bounceIn 0.6s ease-out;
+    `;
+    badgeDiv.textContent = badgeText;
+    document.body.appendChild(badgeDiv);
+    
+    setTimeout(() => {
+        badgeDiv.remove();
+        style.remove();
+    }, 3000);
+}
+
+// Add these missing functions:
+window.submitFeedback = function() {
+    const enjoyFeedback = document.getElementById('enjoy-feedback');
+    const improveFeedback = document.getElementById('improve-feedback');
+    
+    if (!enjoyFeedback || !improveFeedback) {
+        console.error('Feedback elements not found');
+        return;
+    }
+    
+    // Store feedback in userData
+    userData.feedback = {
+        enjoyed: enjoyFeedback.value,
+        improvements: improveFeedback.value
+    };
+    
+    // Set end time
+    userData.endTime = Date.now();
+    
+    console.log('Feedback submitted:', userData.feedback);
+    
+    // Show completion message
+    showNotification('✅ Thank you for your feedback!');
+    
+    // Immediately export to Google Sheets
+    exportToGoogleSheets();
+    
+    // Show final results after a delay
+    setTimeout(() => {
+        showResults();
+    }, 2000);
+};
+
+window.downloadCertificate = function() {
+    // Create a simple certificate
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 800;
+    canvas.height = 600;
+    
+    // Draw certificate background
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, 800, 600);
+    
+    // Add border
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 5;
+    ctx.strokeRect(20, 20, 760, 560);
+    
+    // Add text
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 36px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Certificate of Completion', 400, 150);
+
+    
+    ctx.font = '24px Arial';
+    ctx.fillText('This certifies that', 400, 220);
+    
+    ctx.font = 'bold 32px Arial';
+    ctx.fillStyle = '#2196F3';
+    ctx.fillText(userData.name || 'Student', 400, 280);
+    
+    ctx.font = '24px Arial';
+    ctx.fillStyle = '#333';
+    ctx.fillText('has successfully completed the', 400, 330);
+    
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#4CAF50';
+    ctx.fillText(`${userData.proficiencyLevel.toUpperCase()} AI Course`, 400, 380);
+    
+    // Add score
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#333';
+    const pretestScore = userData.pretest.filter(x => x.correct).length;
+    const posttestScore = userData.posttest.filter(x => x.correct).length;
+    ctx.fillText(`Final Score: ${posttestScore}/${shuffledPosttestQuestions.length}`, 400, 430);
+    ctx.fillText(`Total Points: ${userData.points}`, 400, 460);
+    
+    // Add date
+    const date = new Date().toLocaleDateString();
+    ctx.fillText(`Completed on: ${date}`, 400, 520);
+    
+    // Download the certificate
+    const link = document.createElement('a');
+    link.download = `${userData.name}_AI_Certificate.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+    
+    showNotification('🏆 Certificate downloaded!');
+};
+
+function showResults() {
+    // Hide all other sections
+    document.querySelectorAll('section').forEach(section => {
+        section.style.display = 'none'; // ← ADD MISSING LINE
+    });
+    
+    // Show results section
+    const resultsSection = document.getElementById('highscore-section');
+    const resultsDiv = document.getElementById('results');
+    
+
+    
+    const pretestScore = userData.pretest.filter(x => x.correct).length;
+    const posttestScore = userData.posttest.filter(x => x.correct).length;
+    const improvement = posttestScore - pretestScore;
     
     resultsDiv.innerHTML = `
         <div class="results-summary">
-            <h2>🎉 Congratulations ${userData.name}!</h2>
-            <div class="stats">
-                <div class="stat">
-                    <h3>📝 Pretest Score</h3>
-                    <p>${pretestScore} / ${shuffledPretestQuestions.length} (Time: ${userData.pretestTime}s)</p>
-                </div>
-                <div class="stat">
-                    <h3>📚 Modules Completed</h3>
-                    <p>${modulesCompleted} / ${courseStructure.length}</p>
-                </div>
-                <div class="stat">
-                    <h3>🏆 Badges Earned</h3>
-                    <p>${userData.badges.join(', ') || 'None yet'}</p>
-                </div>
-                <div class="stat">
-                    <h3>⭐ Total Points</h3>
-                    <p>${userData.points}</p>
-                </div>
-                <div class="stat">
-                    <h3>📝 Module Quiz Score</h3>
-                    <p>${quizScore} / ${userData.moduleProgress.filter(m => m.quizCorrect !== undefined).length}</p>
-                </div>
-                <div class="stat">
-                    <h3>📋 Posttest Score</h3>
-                    <p>${posttestScore} / ${shuffledPosttestQuestions.length} (Time: ${userData.posttestTime}s)</p>
-                </div>
-                <div class="stat">
-                    <h3>⏱️ Total Time</h3>
-                    <p>${totalTime} seconds</p>
-                </div>
+            <h3>📊 Your Final Results</h3>
+            <div class="score-card">
+                <p><strong>🎯 Pretest Score:</strong> ${pretestScore}/${shuffledPretestQuestions.length}</p>
+                <p><strong>🎯 Posttest Score:</strong> ${posttestScore}/${shuffledPosttestQuestions.length}</p>
+                <p><strong>📈 Improvement:</strong> ${improvement > 0 ? '+' : ''}${improvement} points</p>
+                <p><strong>📚 Course Level:</strong> ${userData.proficiencyLevel}</p>
+                <p><strong>✅ Modules Completed:</strong> ${userData.moduleProgress.length}/${currentCourse.length}</p>
+                <p><strong>🏆 Badges Earned:</strong> ${userData.badges.join(', ') || 'None'}</p>
+                <p><strong>⭐ Total Points:</strong> ${userData.points}</p>
             </div>
         </div>
     `;
     
-    saveData();
-    updateAnswerAnalytics();
-    exportToGoogleSheets();
-    showConfetti();
+    resultsSection.style.display = 'block';
+}
+
+// Timing functions
+function startTimer() {
+    moduleStart = Date.now();
+}
+
+function endTimer() {
+    moduleEnd = Date.now();
+    const timeSpent = Math.round((moduleEnd - moduleStart) / 1000);
+    userData.timeSpent = (userData.timeSpent || 0) + timeSpent;
 }
 
 function updateProgress() {
-    // Calculate progress: pretest + modules + posttest  
-    const totalSteps = shuffledPretestQuestions.length + (currentCourse.length || 1) + shuffledPosttestQuestions.length;
-    const completedSteps = currentPretest + currentModule + currentPosttest;
-    const progress = (completedSteps / totalSteps) * 100;
-    progressBar.style.width = progress + '%';
-}
-
-function updateLevel() {
-    updateModuleProgress();
-}
-
-// Score animation
-function showScoreAnim(points) {
-    const anim = document.createElement('div');
-    anim.className = 'score-anim';
-    anim.textContent = `+${points}`;
-    document.body.appendChild(anim);
-    setTimeout(() => anim.remove(), 1000);
-}
-
-// Badge animation
-function showBadge(text) {
-    const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = text;
-    document.getElementById('main-container').prepend(badge);
-    setTimeout(() => badge.remove(), 2000);
-}
-
-// Confetti animation
-function showConfetti() {
-    const confetti = document.createElement('canvas');
-    confetti.className = 'confetti';
-    confetti.width = window.innerWidth;
-    confetti.height = window.innerHeight;
-    document.body.appendChild(confetti);
-    // Simple confetti effect
-    const ctx = confetti.getContext('2d');
-    let pieces = Array.from({length: 80}, () => ({x: Math.random()*confetti.width, y: Math.random()*confetti.height, r: Math.random()*8+4, c: `hsl(${Math.random()*360},80%,60%)`, v: Math.random()*2+1}));
-    let frame = 0;
-    function draw() {
-        ctx.clearRect(0,0,confetti.width,confetti.height);
-        pieces.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, 2*Math.PI);
-            ctx.fillStyle = p.c;
-            ctx.fill();
-            p.y += p.v;
-            if (p.y > confetti.height) p.y = -10;
-        });
-        frame++;
-        if (frame < 80) requestAnimationFrame(draw);
-        else confetti.remove();
+    const progressBar = document.getElementById('progress-bar');
+    if (!progressBar) {
+        console.error('Progress bar element not found');
+        return;
     }
-    draw();
+    
+    const total = shuffledPretestQuestions.length + (currentCourse ? currentCourse.length : 7) + shuffledPosttestQuestions.length;
+    const completed = userData.pretest.length + userData.moduleProgress.length + userData.posttest.length;
+    const percentage = Math.round((completed / total) * 100);
+    
+    progressBar.style.width = percentage + '%';
 }
 
-// Sound effects
-const correctSound = new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa4c3e.mp3');
-const wrongSound = new Audio('https://cdn.pixabay.com/audio/2022/07/26/audio_124bfa4c3e.mp3');
+function updateProgress() {
+    const progressBar = document.getElementById('progress-bar');
+    if (!progressBar) {
+        console.error('Progress bar element not found');
+        return;
+    }
+    
+    const total = shuffledPretestQuestions.length + (currentCourse ? currentCourse.length : 7) + shuffledPosttestQuestions.length;
+    const completed = userData.pretest.length + userData.moduleProgress.length + userData.posttest.length;
+    const percentage = Math.round((completed / total) * 100);
+    
+    progressBar.style.width = percentage + '%';
+}
+
+function showScoreAnim(points) {
+    const scoreDiv = document.createElement('div');
+    scoreDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #4CAF50;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 24px;
+        font-weight: bold;
+        z-index: 1000;
+        animation: bounce 0.5s ease-in-out;
+    `;
+    scoreDiv.textContent = `+${points} points!`;
+    document.body.appendChild(scoreDiv);
+    
+    setTimeout(() => {
+        scoreDiv.remove();
+    }, 2000);
+}
+
+// Add missing checkEscapeAnswer function for escape room module
+window.checkEscapeAnswer = function(challengeNumber) {
+    const answerInput = document.getElementById('escape-answer');
+    if (!answerInput) {
+        console.error('Answer input not found');
+        return;
+    }
+    
+    const answer = answerInput.value.toLowerCase();
+    
+    if (answer.includes('agentive') || answer.includes('agent')) {
+        showNotification('✅ Correct! Agentive AI is perfect for smart home automation!');
+        userData.points += 20;
+        showScoreAnim(20);
+        
+        // Mark current module as completed
+        const currentModuleId = currentCourse[currentModule]?.id;
+        if (currentModuleId && !userData.moduleProgress.includes(currentModuleId)) {
+            userData.moduleProgress.push(currentModuleId);
+        }
+        
+        // Move to next module
+        currentModule++;
+        showModule();
+    } else {
+        showNotification('❌ Try again! Think about AI that takes actions for you.');
+    }
+};
